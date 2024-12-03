@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="187baee9-414e-4bea-9112-ed142710606b" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<http:listener-config name="HTTP_Listener_config1" doc:name="HTTP Listener config" doc:id="249ff023-3985-46cb-a3eb-ddf1824e801a" >
+		<http:listener-connection host="0.0.0.0" port="8080" />
+	</http:listener-config>
+	<validation:config name="Validation_Config" doc:name="Validation Config" doc:id="d9b224e0-d043-4900-84ee-a4eab211608c" />
+	<flow name="hello-worldFlow" doc:id="3f8b1673-2ba6-47b5-92ae-d6629491f1f5" >
+		<http:listener doc:name="Listener" doc:id="85efb8c7-eeb5-4731-ae5d-227b804a1b85" config-ref="HTTP_Listener_config1" path="/errordemo">
+			<http:error-response >
+				<http:body ><![CDATA[#[payload]]]></http:body>
+			</http:error-response>
+		</http:listener>
+		<validation:is-number numberType="INTEGER" doc:name="Is number" doc:id="3d97619d-2662-4bee-920e-61b72db8ce3d" config-ref="Validation_Config" value="#[attributes.queryParams.contact]"/>
+		<ee:transform doc:name="Transform Message" doc:id="ee03bcec-9108-4eb9-a77f-09a38f9ccff5" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	status: "200",
+	Response: "Success"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="65cc649e-22f4-403e-8d06-70de4b0b4751" type="ANY">
+				<ee:transform doc:name="Transform Message" doc:id="5e6fbca7-67d6-4e3f-9684-7023045e7ea1" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	status: "400",
+	ErrorDescription: error.description
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<logger level="INFO" doc:name="Logger" doc:id="cbd092a3-8283-4b33-9bdf-c3ea2980a66b" message="--------ON Error Propogate--------"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+</mule>
